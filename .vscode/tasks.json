@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: g++.exe custom main file",
+            "command": "C:/msys64/mingw64/bin/g++.exe",
+            "args": [
+                "-g",
+                "-std=c++17",
+                // "-mwindows",
+                "-I${workspaceFolder}/include",
+                "-L${workspaceFolder}/lib",
+                "${workspaceFolder}/src/glad.c",
+                "${workspaceFolder}/main.cpp",
+                "-lglfw3dll",
+                "-o",
+                "${workspaceFolder}/main.exe"
+            ],
+            "options": {
+                "cwd": "C:/msys64/mingw64/bin"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build",
+            "detail": "compiler: C:/msys64/mingw64/bin/g++.exe"
+        }
+    ]
+}
