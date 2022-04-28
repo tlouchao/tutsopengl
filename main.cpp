@@ -1,7 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <fstream>
 #include <iostream>
+#include <fstream>
+#include <string>
 
 GLFWwindow* glfwInitAndGetWindow()
 {
@@ -50,28 +51,28 @@ const char* getShader(std::string filename) {
     return static_cast<const char*>(srcShader);
 }
 
-unsigned int linkShaderProgram(){
+unsigned int linkShaderProgram(std::string vname, std::string fname){
 
     int success;
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const char* vertexSrc = getShader("vertex.glsl");
+    const char* vertexSrc = getShader(vname + ".glsl");
     glShaderSource(vertexShader, 1, &vertexSrc, NULL);
     glCompileShader(vertexShader);
 
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success){
-        std::cerr << "Vertex shader compilation failed" << std::endl;
+        std::cerr << "Vertex shader " + vname + " compilation failed" << std::endl;
     }
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* fragmentSrc = getShader("fragment.glsl");
+    const char* fragmentSrc = getShader(fname + ".glsl");
     glShaderSource(fragmentShader, 1, &fragmentSrc, NULL);
     glCompileShader(fragmentShader);
 
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success){
-        std::cerr << "Fragment shader compilation failed" << std::endl;
+        std::cerr << "Fragment shader " + fname + " compilation failed" << std::endl;
     }
 
     unsigned int shaderProgram = glCreateProgram();
@@ -83,7 +84,6 @@ unsigned int linkShaderProgram(){
     if(!success) {
         std::cerr << "Shader program link failed" << std::endl;
     }
-
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
     return shaderProgram;
@@ -94,25 +94,41 @@ int main() {
     std::cout << "Hello Universe!" << std::endl;
     GLFWwindow* window = glfwInitAndGetWindow();
 
-    float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
+    float vtx1[] = {
+     -0.1f, -0.5f, 0.0f,
+     -0.1f, 0.5f, 0.0f,
+     -0.5f, 0.0f, 0.0f
     };
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(VAO);
+    float vtx2[] = {
+     0.1f, -0.5f, 0.0f,
+     0.1f, 0.5f, 0.0f,
+     0.5f, 0.0f, 0.0f
+    };
+    unsigned int VBOs[2], VAOs[2];
+    glGenVertexArrays(2, VAOs);
+    glGenBuffers(2, VBOs);
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // config vertex buffer object 1
+    glBindVertexArray(VAOs[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vtx1), vtx1, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
+    // config vertex buffer object 2
+    glBindVertexArray(VAOs[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vtx2), vtx2, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    /*
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    */
 
-    unsigned int shaderProgram = linkShaderProgram();
+    unsigned int shaderProgram1 = linkShaderProgram("vertex", "fragmentOr");
+    unsigned int shaderProgram2 = linkShaderProgram("vertex", "fragmentGr");
 
     while(!glfwWindowShouldClose(window))
     {
@@ -121,17 +137,22 @@ int main() {
         glClearColor(.05f, .05f, .25f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
+        glUseProgram(shaderProgram1);
+        glBindVertexArray(VAOs[0]);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glUseProgram(shaderProgram2);
+        glBindVertexArray(VAOs[1]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
+    glDeleteVertexArrays(2, VAOs);
+    glDeleteBuffers(2, VBOs);
+    glDeleteProgram(shaderProgram1);
+    glDeleteProgram(shaderProgram2);
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << "Exit" << std::endl;

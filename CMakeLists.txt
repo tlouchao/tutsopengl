@@ -21,7 +21,7 @@ file(GLOB SHADERS ${CMAKE_SOURCE_DIR}/shaders/*.glsl)
 
 foreach(shader ${SHADERS})
   list(APPEND copy_shader_commands
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${shader} ${CMAKE_BINARY_DIR}/shaders)
+    COMMAND ${CMAKE_COMMAND} -E copy ${shader} ${CMAKE_BINARY_DIR}/shaders)
 endforeach()
 
 add_custom_command(
