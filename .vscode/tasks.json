@@ -8,14 +8,13 @@
             "args": [
                 "-g",
                 "-std=c++17",
-                // "-mwindows",
                 "-I${workspaceFolder}/include",
                 "-L${workspaceFolder}/lib",
                 "${workspaceFolder}/src/glad.c",
                 "${workspaceFolder}/main.cpp",
                 "-lglfw3dll",
                 "-o",
-                "${workspaceFolder}/main.exe"
+                "${workspaceFolder}/tutsopengl.exe"
             ],
             "options": {
                 "cwd": "C:/msys64/mingw64/bin"
