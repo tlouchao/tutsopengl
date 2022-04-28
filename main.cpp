@@ -118,12 +118,13 @@ int main() {
     {
         processInput(window);
 
+        glClearColor(.05f, .05f, .25f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        //glClearColor(.2f, .2f, .5f, 1.f);
-        //glClear(GL_COLOR_BUFFER_BIT);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
