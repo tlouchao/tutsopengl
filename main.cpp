@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 GLFWwindow* glfwInitAndGetWindow()
 {
@@ -93,16 +94,15 @@ int main() {
 
     std::cout << "Hello Universe!" << std::endl;
     GLFWwindow* window = glfwInitAndGetWindow();
-
     float vtx1[] = {
-     -0.1f, -0.5f, 0.0f,    1.f, 0.f, 0.f,
-     -0.1f, 0.5f, 0.0f,     0.f, 1.f, 0.f,
+     -0.05f, -0.5f, 0.0f,    1.f, 0.f, 0.f,
+     -0.05f, 0.5f, 0.0f,     0.f, 1.f, 0.f,
      -0.5f, 0.0f, 0.0f,     0.f, 0.f, 1.f
     };
     float vtx2[] = {
-     0.1f, -0.5f, 0.0f,     1.f, 1.f, 0.f,
-     0.1f, 0.5f, 0.0f,      0.f, 1.f, 1.f,
-     0.5f, 0.0f, 0.0f,      1.f, 0.f, 1.f
+     0.05f, -0.5f, 0.0f,     1.f, 0.f, 1.f,
+     0.05f, 0.5f, 0.0f,      1.f, 1.f, 0.f,
+     0.5f, 0.0f, 0.0f,      0.f, 1.f, 1.f
     };
     unsigned int VBOs[2], VAOs[2];
     glGenVertexArrays(2, VAOs);
@@ -139,7 +139,12 @@ int main() {
 
         glClearColor(.05f, .05f, .25f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
-
+        /*
+        float timeValue = glfwGetTime();
+        float uniValue = (std::cos(timeValue) + 1) / 2;
+        int uniColorLocation = glGetUniformLocation(shaderProgram, "uniColor");
+        glUniform4f(uniColorLocation, 0.0f, uniValue, uniValue, 1.0f);
+        */
         glUseProgram(shaderProgram);
         glBindVertexArray(VAOs[0]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
