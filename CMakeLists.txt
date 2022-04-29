@@ -16,16 +16,19 @@ add_executable(${PROJECT_NAME} main.cpp ${SOURCES})
 target_link_libraries(OpenGL::GL)
 
 # copy shader files to build directory
-set(copy_shader_commands)
-file(GLOB SHADERS ${CMAKE_SOURCE_DIR}/shaders/*.glsl)
+file(GLOB src_shaders ${CMAKE_SOURCE_DIR}/shaders/*.glsl)
+set(dest_shaders ${CMAKE_BINARY_DIR}/shaders)
 
-foreach(shader ${SHADERS})
+file(MAKE_DIRECTORY ${dest_shaders})
+
+foreach(shader ${src_shaders})
   list(APPEND copy_shader_commands
-    COMMAND ${CMAKE_COMMAND} -E copy ${shader} ${CMAKE_BINARY_DIR}/shaders)
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${shader} ${dest_shaders})
 endforeach()
 
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD 
     ${copy_shader_commands}
+    DEPENDS ${src_shaders}
     COMMENT "Copying shaders to build directory"
 )

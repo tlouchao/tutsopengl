@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 GLFWwindow* glfwInitAndGetWindow()
@@ -33,46 +34,44 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-const char* getShader(std::string filename) {
-    std::ifstream f;
-    char* srcShader;
-    int length;
-    f.open("./shaders/" + filename);
-    if (f.is_open()){
-        f.seekg(0, std::ios::end);
-        length = f.tellg();
-        f.seekg(0, std::ios::beg);
-        srcShader = new char[length];
-        f.read(srcShader, length);
-        f.close();
-    } else {
-        std::cerr << "Did not open file " + filename << std::endl;
+std::string getShader(std::string filename) {
+    std::ifstream f("./shaders/" + filename);
+    std::stringstream s(std::ios_base::out);
+    for (std::string line; std::getline(f, line); ) 
+    {
+        s << line << '\n';
     }
-    return static_cast<const char*>(srcShader);
+    return s.str();
 }
 
 unsigned int linkShaderProgram(std::string vname, std::string fname){
 
     int success;
+    int infoLen = 1024;
+    char infoLog[infoLen];
 
     unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const char* vertexSrc = getShader(vname + ".glsl");
+    const char* vertexSrc = getShader(vname + ".glsl").c_str();
     glShaderSource(vertexShader, 1, &vertexSrc, NULL);
     glCompileShader(vertexShader);
 
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success){
-        std::cerr << "Vertex shader " + vname + " compilation failed" << std::endl;
+        std::cerr << "Vertex source: \n\n" << vertexSrc << std::endl;
+        glGetShaderInfoLog(vertexShader, infoLen, NULL, infoLog);
+        std::cerr << "Vertex shader " + vname + " compilation failed: " << infoLog << std::endl;
     }
 
     unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* fragmentSrc = getShader(fname + ".glsl");
+    const char* fragmentSrc = getShader(fname + ".glsl").c_str();
     glShaderSource(fragmentShader, 1, &fragmentSrc, NULL);
     glCompileShader(fragmentShader);
 
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success){
-        std::cerr << "Fragment shader " + fname + " compilation failed" << std::endl;
+        std::cerr << "Fragment source: \n\n" << fragmentSrc << std::endl;
+        glGetShaderInfoLog(vertexShader, infoLen, NULL, infoLog);
+        std::cerr << "Fragment shader " + fname + " compilation failed: " << infoLog << std::endl;
     }
 
     unsigned int shaderProgram = glCreateProgram();
@@ -82,7 +81,8 @@ unsigned int linkShaderProgram(std::string vname, std::string fname){
 
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if(!success) {
-        std::cerr << "Shader program link failed" << std::endl;
+        glGetProgramInfoLog(shaderProgram, infoLen, NULL, infoLog);
+        std::cerr << "Shader program link failed: " << infoLog << std::endl;
     }
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -95,14 +95,14 @@ int main() {
     GLFWwindow* window = glfwInitAndGetWindow();
 
     float vtx1[] = {
-     -0.1f, -0.5f, 0.0f,
-     -0.1f, 0.5f, 0.0f,
-     -0.5f, 0.0f, 0.0f
+     -0.1f, -0.5f, 0.0f,    1.f, 0.f, 0.f,
+     -0.1f, 0.5f, 0.0f,     0.f, 1.f, 0.f,
+     -0.5f, 0.0f, 0.0f,     0.f, 0.f, 1.f
     };
     float vtx2[] = {
-     0.1f, -0.5f, 0.0f,
-     0.1f, 0.5f, 0.0f,
-     0.5f, 0.0f, 0.0f
+     0.1f, -0.5f, 0.0f,     1.f, 1.f, 0.f,
+     0.1f, 0.5f, 0.0f,      0.f, 1.f, 1.f,
+     0.5f, 0.0f, 0.0f,      1.f, 0.f, 1.f
     };
     unsigned int VBOs[2], VAOs[2];
     glGenVertexArrays(2, VAOs);
@@ -112,23 +112,26 @@ int main() {
     glBindVertexArray(VAOs[0]);
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vtx1), vtx1, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // config vertex buffer object 2
     glBindVertexArray(VAOs[1]);
     glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vtx2), vtx2, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     /*
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     */
 
-    unsigned int shaderProgram1 = linkShaderProgram("vertex", "fragmentOr");
-    unsigned int shaderProgram2 = linkShaderProgram("vertex", "fragmentGr");
+    unsigned int shaderProgram = linkShaderProgram("vertex", "fragment");
 
     while(!glfwWindowShouldClose(window))
     {
@@ -137,11 +140,11 @@ int main() {
         glClearColor(.05f, .05f, .25f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram1);
+        glUseProgram(shaderProgram);
         glBindVertexArray(VAOs[0]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        glUseProgram(shaderProgram2);
+        glUseProgram(shaderProgram);
         glBindVertexArray(VAOs[1]);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -151,8 +154,7 @@ int main() {
 
     glDeleteVertexArrays(2, VAOs);
     glDeleteBuffers(2, VBOs);
-    glDeleteProgram(shaderProgram1);
-    glDeleteProgram(shaderProgram2);
+    glDeleteProgram(shaderProgram);
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << "Exit" << std::endl;
