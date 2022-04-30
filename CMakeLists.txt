@@ -15,11 +15,15 @@ set(SOURCES ${CMAKE_SOURCE_DIR}/src/glad.c)
 add_executable(${PROJECT_NAME} main.cpp ${SOURCES})
 target_link_libraries(OpenGL::GL)
 
-# copy shader files to build directory
-file(GLOB src_shaders ${CMAKE_SOURCE_DIR}/shaders/*.glsl)
+# copy shader and texture files to build directory
+set(dest_img ${CMAKE_BINARY_DIR}/img)
 set(dest_shaders ${CMAKE_BINARY_DIR}/shaders)
+file(GLOB src_shaders ${CMAKE_SOURCE_DIR}/shaders/*.glsl)
 
+file(MAKE_DIRECTORY ${dest_img})
 file(MAKE_DIRECTORY ${dest_shaders})
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/img/bookshelf.png DESTINATION ${dest_img})
 
 foreach(shader ${src_shaders})
   list(APPEND copy_shader_commands

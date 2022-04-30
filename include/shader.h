@@ -17,6 +17,18 @@ public:
     void use() {
         glUseProgram(m_ID);
     }
+    void setBool(const std::string &name, bool value) const
+    {         
+        glUniform1i(glGetUniformLocation(m_ID, name.c_str()), (int)value); 
+    }
+    void setInt(const std::string &name, int value) const
+    { 
+        glUniform1i(glGetUniformLocation(m_ID, name.c_str()), value); 
+    }
+    void setFloat(const std::string &name, float value) const
+    { 
+        glUniform1f(glGetUniformLocation(m_ID, name.c_str()), value); 
+    } 
 
 private:
 
@@ -36,8 +48,7 @@ private:
 
     unsigned int compileShader(int success, char* infoLog, const int infoLen, const std::string& shaderFile, unsigned int shaderType){
         unsigned int shader = glCreateShader(shaderType);
-        std::string shaderSrcTmp = readShaderFile(shaderFile);
-        const char* shaderSrc = shaderSrcTmp.c_str();
+        const char* shaderSrc = readShaderFile(shaderFile).c_str();
         glShaderSource(shader, 1, &shaderSrc, NULL);
         glCompileShader(shader);
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);

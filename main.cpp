@@ -1,6 +1,9 @@
+#define STB_IMAGE_IMPLEMENTATION
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <stb/stb_image.h>
 #include <shader.h>
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -40,42 +43,51 @@ int main() {
 
     std::cout << "Hello Universe!" << std::endl;
     GLFWwindow* window = glfwInitAndGetWindow();
-    float vtx1[] = {
-     -0.05f, -0.5f, 0.0f,   1.f, 0.f, 0.f,
-     -0.05f, 0.5f, 0.0f,    0.f, 1.f, 0.f,
-     -0.5f, 0.0f, 0.0f,     0.f, 0.f, 1.f
+    float vtx[] = {
+     -0.5f, -0.5f, 0.0f,   1.f, 0.f, 0.f,   0.f, 0.f,
+     -0.5f, 0.5f, 0.0f,    0.f, 1.f, 0.f,   0.f, 1.f,
+     0.5f, 0.5f, 0.0f,     0.f, 0.f, 1.f,   1.f, 1.f,
+     0.5f, -0.5f, 0.0f,    1.f, 1.f, 0.f,   1.f, 0.f
     };
-    float vtx2[] = {
-     0.05f, -0.5f, 0.0f,    1.f, 0.f, 1.f,
-     0.05f, 0.5f, 0.0f,     1.f, 1.f, 0.f,
-     0.5f, 0.0f, 0.0f,      0.f, 1.f, 1.f
-    };
-    unsigned int VBOs[2], VAOs[2];
-    glGenVertexArrays(2, VAOs);
-    glGenBuffers(2, VBOs);
+    unsigned int VBO, VAO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
 
-    // config vertex buffer object 1
-    glBindVertexArray(VAOs[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vtx1), vtx1, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vtx), vtx, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-
-    // config vertex buffer object 2
-    glBindVertexArray(VAOs[1]);
-    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vtx2), vtx2, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     /*
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     */
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    int width, height, nrChannels;
+    std::string imgFileTmp = "img/bookshelf.png";
+    const char* imgFile = imgFileTmp.c_str();
+    stbi_set_flip_vertically_on_load(true);
+    unsigned int ok = stbi_info(imgFile, &width, &height, &nrChannels);
+    unsigned char* imgData = stbi_load(imgFile, &width, &height, &nrChannels, 0);
+
+    if (imgData) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        std::cerr << imgFile << " not loaded\n"; 
+    }
+    stbi_image_free(imgData);
 
     Shader shaderProgram = Shader("shaders/vertex.glsl", "shaders/fragment.glsl");
 
@@ -85,26 +97,19 @@ int main() {
 
         glClearColor(.05f, .05f, .25f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
-        /*
-        float timeValue = glfwGetTime();
-        float uniValue = (std::cos(timeValue) + 1) / 2;
-        int uniColorLocation = glGetUniformLocation(shaderProgram, "uniColor");
-        glUniform4f(uniColorLocation, 0.0f, uniValue, uniValue, 1.0f);
-        */
-        shaderProgram.use();
-        glBindVertexArray(VAOs[0]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         shaderProgram.use();
-        glBindVertexArray(VAOs[1]);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(2, VAOs);
-    glDeleteBuffers(2, VBOs);
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << "Exit" << std::endl;
