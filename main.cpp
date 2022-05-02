@@ -2,6 +2,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <shader.h>
 #include <filesystem>
 #include <iostream>
@@ -29,6 +32,7 @@ GLFWwindow* glfwInitAndGetWindow()
     }
 
     glfwMakeContextCurrent(window);
+    glfwSetWindowAttrib(window, GLFW_RESIZABLE, false);
     gladLoadGL();
     return window;
 }
@@ -68,13 +72,16 @@ int main() {
     glBindVertexArray(0);
     */
 
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    unsigned int textures[2];
+    glGenTextures(2, textures);
+    
+    int width, height, nrChannels;
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textures[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    int width, height, nrChannels;
     std::string imgFileTmp = "img/bookshelf.png";
     const char* imgFile = imgFileTmp.c_str();
     stbi_set_flip_vertically_on_load(true);
@@ -89,7 +96,32 @@ int main() {
     }
     stbi_image_free(imgData);
 
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, textures[1]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    imgFileTmp = "img/blender_badge.png";
+    imgFile = imgFileTmp.c_str();
+    ok = stbi_info(imgFile, &width, &height, &nrChannels);
+    imgData = stbi_load(imgFile, &width, &height, &nrChannels, 0);
+
+    if (imgData) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgData);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        std::cerr << imgFile << " not loaded\n"; 
+    }
+    stbi_image_free(imgData);
+
     Shader shaderProgram = Shader("shaders/vertex.glsl", "shaders/fragment.glsl");
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -1.5f));
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(60.0f), 900.0f / 600.0f, 0.1f, 100.0f);
 
     while(!glfwWindowShouldClose(window))
     {
@@ -98,9 +130,13 @@ int main() {
         glClearColor(.05f, .05f, .25f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindTexture(GL_TEXTURE_2D, texture);
-
         shaderProgram.use();
+        shaderProgram.setInt("uniTex1", 0);
+        shaderProgram.setInt("uniTex2", 1);
+        shaderProgram.setMat("model", model);
+        shaderProgram.setMat("view", view);
+        shaderProgram.setMat("projection", projection);
+
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 

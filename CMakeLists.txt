@@ -24,6 +24,7 @@ file(MAKE_DIRECTORY ${dest_img})
 file(MAKE_DIRECTORY ${dest_shaders})
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/img/bookshelf.png DESTINATION ${dest_img})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/img/blender_badge.png DESTINATION ${dest_img})
 
 foreach(shader ${src_shaders})
   list(APPEND copy_shader_commands
