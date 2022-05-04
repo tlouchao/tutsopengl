@@ -51,7 +51,9 @@
         "fstream": "cpp",
         "iomanip": "cpp",
         "sstream": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "cstring": "cpp",
+        "filesystem": "cpp"
     },
     "cmake.mingwSearchDirs": [
         "C:/msys64/mingw64/bin"
