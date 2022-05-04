@@ -3,16 +3,31 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <VAOWrapper.h>
 #include <shader.h>
 #include <textures.h>
-#include <VAOWrapper.h>
-#include <filesystem>
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <vector>
 #include <cmath>
+
+const static int WIDTH = 900; const static int HEIGHT = 600;
+
+float deltaTime = 0.0f;	// Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+
+bool firstMouse = true;
+float yaw   = -90.0f;
+float lastX =  static_cast<float>(WIDTH) / 2.0;
+
+glm::vec3 cmPos   = glm::vec3(0.0f, 0.0f,  3.0f);
+glm::vec3 cmFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cmUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+float cmSpeed = 3.f;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
+void processInput(GLFWwindow* window, float cmSpeed, glm::vec3& cmPos, glm::vec3& cmFront, glm::vec3& cmUp);
 
 GLFWwindow* glfwInitAndGetWindow(int width, int height)
 {
@@ -33,26 +48,22 @@ GLFWwindow* glfwInitAndGetWindow(int width, int height)
     }
 
     glfwMakeContextCurrent(window);
-    glfwSetWindowAttrib(window, GLFW_RESIZABLE, false);
     gladLoadGL();
     return window;
 }
 
-void processInput(GLFWwindow* window)
-{
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-}
-
 int main() {
 
-    const static int WIDTH = 900; const static int HEIGHT = 600;
-
     std::cout << "Hello Universe!" << std::endl;
-    GLFWwindow* window = glfwInitAndGetWindow(WIDTH, HEIGHT);
 
-    VAOWrapper VAOWrap = VAOWrapper();
-    Shader shaderProgram = Shader("shaders/vertex.glsl", "shaders/fragment.glsl");
+    GLFWwindow* window = glfwInitAndGetWindow(WIDTH, HEIGHT);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glEnable(GL_DEPTH_TEST);
+
+    VAOWrapper vWrapper = VAOWrapper();
+    Shader shader = Shader("shaders/vertex.glsl", "shaders/fragment.glsl");
     Textures textures = Textures(std::vector<std::string>{"img/bookshelf.png", "img/blender_badge.png"}, 2);
 
     glm::mat4 model = glm::mat4(1.0f);
@@ -64,26 +75,30 @@ int main() {
                                   static_cast<float>(WIDTH) / static_cast<float>(HEIGHT), 
                                   0.1f, 
                                   100.0f);
-
-    glEnable(GL_DEPTH_TEST); 
+    
     while(!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        float cmSpeedAdjust = cmSpeed * deltaTime;
+        processInput(window, cmSpeedAdjust, cmPos, cmFront, cmUp);
 
         glClearColor(.05f, .05f, .25f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shaderProgram.use();
-        shaderProgram.setInt("uniTex1", 0);
-        shaderProgram.setInt("uniTex2", 1);
-        shaderProgram.setMat("model", model);
-        shaderProgram.setMat("view", view);
-        shaderProgram.setMat("projection", projection);
+        view = glm::lookAt(cmPos, cmPos + cmFront, cmUp);
+        model = glm::rotate(model, glm::radians(0.5f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        model = glm::rotate(model, glm::radians(0.5f), glm::vec3(0.75f, 0.66f, 0.5f));
+        shader.use();
+        shader.setInt("uniTex1", 0);
+        shader.setInt("uniTex2", 1);
+        shader.setMat("model", model);
+        shader.setMat("view", view);
+        shader.setMat("projection", projection);
 
-        glBindVertexArray(VAOWrap.getVAO());
-        glDrawArrays(GL_TRIANGLES, 0, VAOWrap.getIndices());
+        glBindVertexArray(vWrapper.getVAO());
+        glDrawArrays(GL_TRIANGLES, 0, vWrapper.getIndices());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -93,4 +108,46 @@ int main() {
     glfwTerminate();
     std::cout << "Exit" << std::endl;
     return 0;
+}
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = static_cast<float>(xposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    lastX = xpos;
+
+    float sensitivity = 0.05f; // change this value to your liking
+    xoffset *= sensitivity;
+    yaw += xoffset;
+
+    glm::vec3 front;
+    front.x = cos(glm::radians(yaw));
+    front.z = sin(glm::radians(yaw));
+    cmFront = glm::normalize(front);
+}
+
+void processInput(GLFWwindow* window, float cmSpeed, glm::vec3& cmPos, glm::vec3& cmFront, glm::vec3& cmUp){
+
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cmPos += cmSpeed * cmFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cmPos -= cmSpeed * cmFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cmPos -= glm::normalize(glm::cross(cmFront, cmUp)) * cmSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cmPos += glm::normalize(glm::cross(cmFront, cmUp)) * cmSpeed;
 }

@@ -58,7 +58,9 @@ private:
                 }
                 float fDist = dist;
                 if (fIdx % 2 == 0){
+                    // negative X, Y, or Z axis. corresponds to left, bottom, back faces of cube
                     fDist = -dist;
+                    // mirror texture coordinates
                     if (std::fabs(coords[0] - 1.f) <= std::numeric_limits<float>::epsilon()) {
                         coords[0] = 0.f;
                     } else {

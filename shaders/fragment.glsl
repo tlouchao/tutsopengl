@@ -11,6 +11,5 @@ const vec4 oneVec = vec4(1.0, 1.0, 1.0, 1.0);
 
 void main()
 {
-    //fragColor = texture(uniTex, vtxTexCoord);
-    fragColor = mix(texture(uniTex1, vtxTexCoord), texture(uniTex2, vtxTexCoord), texture(uniTex2, vtxTexCoord).a * .8);
+    fragColor = mix(texture(uniTex1, vtxTexCoord), texture(uniTex2, vtxTexCoord), texture(uniTex2, vtxTexCoord).a * .5);
 }
